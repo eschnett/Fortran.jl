@@ -75,19 +75,65 @@ feval(a::Assign) = quote
     $(a.lhs.name) = $(feval(a.rhs))::$(a.lhs.type)
 end
 
+struct Block <: Stmt
+    stmts::Vector{Stmt}
+end
+export Block
+feval(b::Block) = quote
+    $((feval(stmt) for stmt in b.stmts)...)
+end
+
+struct Loop <: Stmt
+    var::Var
+    lbnd::FExpr
+    ubnd::FExpr
+    step::FExpr
+    body::Stmt
+end
+export Loop
+function feval(l::Loop)
+    name = l.var.name
+    lbnd = Symbol(name, ".lbnd")
+    ubnd = Symbol(name, ".ubnd")
+    step = Symbol(name, ".step")
+    count = Symbol(name, ".count")
+    idx = Symbol(name, ".idx")
+    quote
+        $lbnd = $(feval(l.lbnd))
+        $ubnd = $(feval(l.ubnd))
+        $step = $(feval(l.step))
+        $step == 0 && error("Loop step is zero")
+        $count = Int(($ubnd - $lbnd) ÷ $step)
+        $name = $lbnd
+        for $idx in 0:($count)
+            $(feval(l.body))
+            $name += $step
+        end
+    end
+end
+
+struct Print <: Stmt
+    format::Any                 # TODO
+    exprs::Vector{FExpr}
+end
+export Print
+feval(p::Print) = quote
+    println(" ", $((feval(expr) for expr in p.exprs)...))
+end
+
 struct FFunction
     name::Symbol
     type::Type
     args::Vector{Var}
     vars::Vector{Var}
-    stmts::Vector{Stmt}
+    body::Stmt
 end
 export FFunction
 function feval(f::FFunction)
     quote
         function $(f.name)($((:($(arg.name)::$(arg.type)) for arg in f.args)...))
             $(f.name) = nothing
-            $((feval(stmt) for stmt in f.stmts)...)
+            $(feval(f.body))
             return $(f.name)::$(f.type)
         end
     end

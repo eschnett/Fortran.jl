@@ -2,21 +2,24 @@ using Fortran
 using InteractiveUtils
 using Test
 
-fun = FFunction(:add, Int, [Var(:x, Int), Var(:y, Int)], Var[],
-                Block([Loop(Var(:i, Int), Const(1, Int), Const(3, Int), Const(1, Int), Print(nothing, [Var(:i, Int)])),
-                       Assign(Var(:add, Int), BinOp(:+, Var(:x, Int), Var(:y, Int), Int))]))
+fun = FFunction(:add, FInteger, [Var(:x, FInteger), Var(:y, FInteger)], Var[],
+                Block([Loop(Var(:i, FInteger), Const(1, FInteger), Const(3, FInteger), Const(1, FInteger),
+                            Print(nothing, [Var(:i, FInteger)])),
+                       Assign(Var(:add, FInteger), BinOp(:+, Var(:x, FInteger), Var(:y, FInteger), FInteger))]))
 
 cfun = feval(fun)
 println("Compiled function:")
 println(cfun)
 eval(cfun)
 
-@code_warntype add(2, 3)
+arg1 = FInteger(2)
+arg2 = FInteger(3)
+@code_warntype add(arg1, arg2)
 println("code_llvm:")
-@code_llvm add(2, 3)
+@code_llvm add(arg1, arg2)
 println("code_native:")
-@code_native add(2, 3)
+@code_native add(arg1, arg2)
 println("result:")
-res = add(2, 3)
+res = add(arg1, arg2)
 println(res)
-@test res ≡ 5
+@test res ≡ FInteger(5)

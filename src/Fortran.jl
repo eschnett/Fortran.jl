@@ -37,6 +37,9 @@ module Fortran
 function feval end
 export feval
 
+const FInteger = Int32
+export FInteger
+
 abstract type FExpr end
 export FExprt
 
@@ -45,7 +48,7 @@ struct Const <: FExpr
     type::Type
 end
 export Const
-feval(c::Const) = :($(c.value)::$(c.type))
+feval(c::Const) = :($(c.type)($(c.value)))
 
 struct Var <: FExpr
     name::Symbol
@@ -72,7 +75,7 @@ struct Assign <: Stmt
 end
 export Assign
 feval(a::Assign) = quote
-    $(a.lhs.name) = $(feval(a.rhs))::$(a.lhs.type)
+    $(a.lhs.name) = $(a.lhs.type)($(feval(a.rhs)))
 end
 
 struct Block <: Stmt
@@ -93,6 +96,7 @@ end
 export Loop
 function feval(l::Loop)
     name = l.var.name
+    type = l.var.type
     lbnd = Symbol(name, ".lbnd")
     ubnd = Symbol(name, ".ubnd")
     step = Symbol(name, ".step")
@@ -103,11 +107,11 @@ function feval(l::Loop)
         $ubnd = $(feval(l.ubnd))
         $step = $(feval(l.step))
         $step == 0 && error("Loop step is zero")
-        $count = Int(($ubnd - $lbnd) ÷ $step)
-        $name = $lbnd
-        for $idx in 0:($count)
+        $count = FInteger(($ubnd - $lbnd) ÷ $step)
+        $name = $type($lbnd)
+        for $idx in FInteger(0):($count)
             $(feval(l.body))
-            $name += $step
+            $name += $type($step)
         end
     end
 end

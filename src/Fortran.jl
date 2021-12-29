@@ -37,8 +37,23 @@ module Fortran
 function feval end
 export feval
 
+struct FLogical
+    value::Int32
+    FLogical(b::Bool) = new(b)
+end
+export FLogical
+convert(::Type{Bool}, l::FLogical) = Bool(l.value)
+
 const FInteger = Int32
 export FInteger
+const FReal = Float32
+export FReal
+const FDoublePrecision = Float64
+export FDoublePrecision
+const FComplex = Complex{FReal}
+export FComplex
+const FDoubleComplex = Complex{FDoublePrecision}
+export FDoubleComplex
 
 abstract type FExpr end
 export FExprt
@@ -57,14 +72,21 @@ end
 export Var
 feval(v::Var) = :($(v.name)::$(v.type))
 
-struct BinOp <: FExpr
-    op::Symbol
-    op1::FExpr
-    op2::FExpr
+struct Add <: FExpr
+    expr1::FExpr
+    expr2::FExpr
     type::Type
 end
-export BinOp
-feval(b::BinOp) = :($(b.op)($(feval(b.op1)), $(feval(b.op2)))::$(b.type))
+export Add
+feval(a::Add) = :($(a.type)($(feval(a.expr1)) + $(feval(a.expr2))))
+
+struct Sub <: FExpr
+    expr1::FExpr
+    expr2::FExpr
+    type::Type
+end
+export Sub
+feval(s::Sub) = :($(s.type)($(feval(s.expr1)) - $(feval(s.expr2))))
 
 abstract type Stmt end
 export Stmt

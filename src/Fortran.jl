@@ -46,7 +46,8 @@ struct FLogical
     FLogical(b::Bool) = new(b)
 end
 export FLogical
-convert(::Type{Bool}, l::FLogical) = Bool(l.value)
+Base.Bool(l::FLogical) = Bool(l.value)
+Base.:%(l::FLogical, ::Type{Bool}) = l.value % Bool
 
 const FInteger = Int32
 export FInteger
@@ -63,7 +64,7 @@ struct Fun{Domain<:Tuple,Codomain} <: Function
     fun::Function
 end
 export Fun
-(f::Fun{Domain,Codomain})(xs...) where {Domain,Codomain} = f.fun((xs::Domain)...)::Codomain
+@inline (f::Fun{Domain,Codomain})(xs...) where {Domain,Codomain} = f.fun((xs::Domain)...)::Codomain
 
 ################################################################################
 
@@ -73,9 +74,11 @@ export FExpr
 struct Const <: FExpr
     value::Any
     type::Type
+    Const(value::T, ::Type{T}) where {T} = new(value, T)
 end
 export Const
-feval(c::Const) = :($(c.type)($(c.value)))
+Const(value) = Const(value, typeof(value))
+feval(c::Const) = c.value
 
 struct Var <: FExpr
     name::Symbol
@@ -111,15 +114,15 @@ feval(b::Block) = quote
     $((feval(stmt) for stmt in b.stmts)...)
 end
 
-struct Loop <: Stmt
+struct Do <: Stmt
     var::Var
     lbnd::FExpr
     ubnd::FExpr
     step::FExpr
     body::Stmt
 end
-export Loop
-function feval(l::Loop)
+export Do
+function feval(l::Do)
     name = l.var.name
     type = l.var.type
     lbnd = Symbol(name, ".lbnd")
@@ -131,7 +134,7 @@ function feval(l::Loop)
         $lbnd = $(feval(l.lbnd))
         $ubnd = $(feval(l.ubnd))
         $step = $(feval(l.step))
-        $step == 0 && error("Loop step is zero")
+        $step == 0 && error("Do loop step is zero")
         $count = FInteger(($ubnd - $lbnd) ÷ $step)
         $name = $type($lbnd)
         for $idx in FInteger(0):($count)
@@ -139,6 +142,25 @@ function feval(l::Loop)
             $name += $type($step)
         end
     end
+end
+
+struct If <: Stmt
+    branches::Vector{Pair{FExpr,Stmt}}
+    default::Stmt
+end
+export If
+function feval(i::If)
+    stmt = feval(i.default)
+    for branch in Iterators.reverse(i.branches)
+        stmt = quote
+            if $(feval(branch[1]))::FLogical % Bool
+                $(feval(branch[2]))
+            else
+                $stmt
+            end
+        end
+    end
+    return stmt
 end
 
 struct Print <: Stmt
@@ -158,25 +180,30 @@ struct FFunction
     body::Stmt
 end
 export FFunction
-function feval(f::FFunction)
-    quote
-        function $(f.name)($((:($(arg.name)::$(arg.type)) for arg in f.args)...))
-            $(f.name) = nothing
-            $(feval(f.body))
-            return $(f.name)::$(f.type)
-        end
+feval(f::FFunction) = quote
+    function $(f.name)($((:($(arg.name)::$(arg.type)) for arg in f.args)...))
+        $(feval(f.body))
+        return $(Symbol(f.name, ".result"))::$(f.type)
     end
 end
 
 ################################################################################
 
-const pos_integer = (f = Fun{Tuple{FInteger},FInteger}(+); Const(f, typeof(f)))
-const neg_integer = (f = Fun{Tuple{FInteger},FInteger}(-); Const(f, typeof(f)))
+const pos_integer = (f = Fun{Tuple{FInteger},FInteger}(+); Const(f))
+const neg_integer = (f = Fun{Tuple{FInteger},FInteger}(-); Const(f))
 
-const add_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(+); Const(f, typeof(f)))
-const sub_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(-); Const(f, typeof(f)))
-const mul_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(*); Const(f, typeof(f)))
-const div_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(÷); Const(f, typeof(f)))
-const mod_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(%); Const(f, typeof(f)))
+const add_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(+); Const(f))
+const sub_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(-); Const(f))
+const mul_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(*); Const(f))
+const div_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(÷); Const(f))
+const mod_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(%); Const(f))
+
+const pos_real = (f = Fun{Tuple{FReal},FReal}(+); Const(f))
+const neg_real = (f = Fun{Tuple{FReal},FReal}(-); Const(f))
+
+const add_real = (f = Fun{Tuple{FReal,FReal},FReal}(+); Const(f))
+const sub_real = (f = Fun{Tuple{FReal,FReal},FReal}(-); Const(f))
+const mul_real = (f = Fun{Tuple{FReal,FReal},FReal}(*); Const(f))
+const div_real = (f = Fun{Tuple{FReal,FReal},FReal}(/); Const(f))
 
 end

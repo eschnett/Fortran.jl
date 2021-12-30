@@ -26,7 +26,8 @@ and this part of the probme is thus "straightforward but tedious".
 
 This project here takes the first steps towards defining a Fortran
 machine. So far, very little is supported -- you can define functions
-that use integer variables, assignments, and binary operators.
+that use scalar variables and perform simple arithmetic, as well as
+loops and if statements.
 
 Finally, converting the Fortran machine tree to Julia is also
 straightforward since Julia is a lispy language, and thus generating

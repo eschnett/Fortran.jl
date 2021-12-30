@@ -122,24 +122,37 @@ struct Do <: Stmt
     body::Stmt
 end
 export Do
-function feval(l::Do)
-    name = l.var.name
-    type = l.var.type
+function feval(d::Do)
+    name = d.var.name
+    type = d.var.type
     lbnd = Symbol(name, ".lbnd")
     ubnd = Symbol(name, ".ubnd")
     step = Symbol(name, ".step")
     count = Symbol(name, ".count")
     idx = Symbol(name, ".idx")
     quote
-        $lbnd = $(feval(l.lbnd))
-        $ubnd = $(feval(l.ubnd))
-        $step = $(feval(l.step))
+        $lbnd = $(feval(d.lbnd))
+        $ubnd = $(feval(d.ubnd))
+        $step = $(feval(d.step))
         $step == 0 && error("Do loop step is zero")
         $count = FInteger(($ubnd - $lbnd) ÷ $step)
         $name = $type($lbnd)
         for $idx in FInteger(0):($count)
-            $(feval(l.body))
+            $(feval(d.body))
             $name += $type($step)
+        end
+    end
+end
+
+struct DoWhile <: Stmt
+    cond::FExpr
+    body::Stmt
+end
+export DoWhile
+function feval(d::DoWhile)
+    quote
+        while $(feval(d.cond))
+            $(feval(d.body))
         end
     end
 end

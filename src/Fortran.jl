@@ -34,8 +34,12 @@ module Fortran
 #     data::Vector{ProgramUnit}
 # end
 
+################################################################################
+
 function feval end
 export feval
+
+################################################################################
 
 struct FLogical
     value::Int32
@@ -55,8 +59,16 @@ export FComplex
 const FDoubleComplex = Complex{FDoublePrecision}
 export FDoubleComplex
 
+struct Fun{Domain<:Tuple,Codomain} <: Function
+    fun::Function
+end
+export Fun
+(f::Fun{Domain,Codomain})(xs...) where {Domain,Codomain} = f.fun((xs::Domain)...)::Codomain
+
+################################################################################
+
 abstract type FExpr end
-export FExprt
+export FExpr
 
 struct Const <: FExpr
     value::Any
@@ -72,21 +84,12 @@ end
 export Var
 feval(v::Var) = :($(v.name)::$(v.type))
 
-struct Add <: FExpr
-    expr1::FExpr
-    expr2::FExpr
-    type::Type
+struct Call <: FExpr
+    fun::FExpr
+    args::Vector{FExpr}
 end
-export Add
-feval(a::Add) = :($(a.type)($(feval(a.expr1)) + $(feval(a.expr2))))
-
-struct Sub <: FExpr
-    expr1::FExpr
-    expr2::FExpr
-    type::Type
-end
-export Sub
-feval(s::Sub) = :($(s.type)($(feval(s.expr1)) - $(feval(s.expr2))))
+export Call
+feval(c::Call) = :($(feval(c.fun))($((feval(arg) for arg in c.args)...)))
 
 abstract type Stmt end
 export Stmt
@@ -164,5 +167,16 @@ function feval(f::FFunction)
         end
     end
 end
+
+################################################################################
+
+const pos_integer = (f = Fun{Tuple{FInteger},FInteger}(+); Const(f, typeof(f)))
+const neg_integer = (f = Fun{Tuple{FInteger},FInteger}(-); Const(f, typeof(f)))
+
+const add_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(+); Const(f, typeof(f)))
+const sub_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(-); Const(f, typeof(f)))
+const mul_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(*); Const(f, typeof(f)))
+const div_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(÷); Const(f, typeof(f)))
+const mod_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(%); Const(f, typeof(f)))
 
 end

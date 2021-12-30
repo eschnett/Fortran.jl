@@ -5,7 +5,7 @@ using Test
 fun = FFunction(:add, FInteger, [Var(:x, FInteger), Var(:y, FInteger)], Var[],
                 Block([Loop(Var(:i, FInteger), Const(1, FInteger), Const(3, FInteger), Const(1, FInteger),
                             Print(nothing, [Var(:i, FInteger)])),
-                       Assign(Var(:add, FInteger), Add(Var(:x, FInteger), Var(:y, FInteger), FInteger))]))
+                       Assign(Var(:add, FInteger), Call(Fortran.add_integer, FExpr[Var(:x, FInteger), Var(:y, FInteger)]))]))
 
 cfun = feval(fun)
 println("Compiled function:")

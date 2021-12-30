@@ -7,7 +7,7 @@ using Test
                     Block([Assign(Var(:var"add.result", FInteger),
                                   Call(Fortran.add_integer, FExpr[Var(:x, FInteger), Var(:y, FInteger)]))]))
 
-    cfun = feval(fun)
+    cfun = clean_code(feval(fun))
     println("Compiled function:")
     println(cfun)
     eval(cfun)
@@ -33,7 +33,7 @@ end
                               Block([Assign(Var(:count, FInteger),
                                             Call(Fortran.add_integer, FExpr[Var(:count, FInteger), Const(FInteger(1))]))])),
                            Assign(Var(:var"loop.result", FInteger), Var(:count, Integer))]))
-    cfun = feval(fun)
+    cfun = clean_code(feval(fun))
     println("Compiled function:")
     println(cfun)
     eval(cfun)
@@ -53,7 +53,7 @@ end
     fun = FFunction(:cond, FInteger, [Var(:c, FLogical), Var(:x, FInteger), Var(:y, FInteger)], Var[],
                     If([Var(:c, FLogical) => Assign(Var(:var"cond.result", FInteger), Var(:x, FInteger))],
                        Assign(Var(:var"cond.result", FInteger), Var(:y, FInteger))))
-    cfun = feval(fun)
+    cfun = clean_code(feval(fun))
     println("Compiled function:")
     println(cfun)
     eval(cfun)

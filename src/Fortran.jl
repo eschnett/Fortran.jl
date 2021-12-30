@@ -36,6 +36,19 @@ module Fortran
 
 ################################################################################
 
+clean_code(expr) = expr
+function clean_code(expr::Expr)
+    expr = Expr(expr.head, map(clean_code, filter(arg -> !(arg isa LineNumberNode), expr.args))...)
+    # Remove line numbers.
+    # Line numbers are usually wrong because they point to this file,
+    # instead of the file where the code originates.
+    if expr.head ≡ :block && length(expr.args) == 1
+        expr = expr.args[1]
+    end
+    return expr
+end
+export clean_code
+
 function feval end
 export feval
 

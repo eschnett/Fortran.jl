@@ -164,7 +164,7 @@ end
 export DoWhile
 function feval(d::DoWhile)
     quote
-        while $(feval(d.cond))
+        while $(feval(d.cond))::FLogical % Bool
             $(feval(d.body))
         end
     end
@@ -215,21 +215,42 @@ end
 
 ################################################################################
 
-const pos_integer = (f = Fun{Tuple{FInteger},FInteger}(+); Const(f))
-const neg_integer = (f = Fun{Tuple{FInteger},FInteger}(-); Const(f))
+feq(x::T, y::T) where {T} = FLogical(x == y)
+fne(x::T, y::T) where {T} = FLogical(x ≠ y)
+fle(x::T, y::T) where {T} = FLogical(x ≤ y)
+flt(x::T, y::T) where {T} = FLogical(x < y)
+fge(x::T, y::T) where {T} = FLogical(x ≥ y)
+fgt(x::T, y::T) where {T} = FLogical(x > y)
 
-const add_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(+); Const(f))
-const sub_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(-); Const(f))
-const mul_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(*); Const(f))
-const div_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(÷); Const(f))
-const mod_integer = (f = Fun{Tuple{FInteger,FInteger},FInteger}(%); Const(f))
+const pos_integer = Const(Fun{Tuple{FInteger},FInteger}(+))
+const neg_integer = Const(Fun{Tuple{FInteger},FInteger}(-))
 
-const pos_real = (f = Fun{Tuple{FReal},FReal}(+); Const(f))
-const neg_real = (f = Fun{Tuple{FReal},FReal}(-); Const(f))
+const add_integer = Const(Fun{Tuple{FInteger,FInteger},FInteger}(+))
+const sub_integer = Const(Fun{Tuple{FInteger,FInteger},FInteger}(-))
+const mul_integer = Const(Fun{Tuple{FInteger,FInteger},FInteger}(*))
+const div_integer = Const(Fun{Tuple{FInteger,FInteger},FInteger}(÷))
+const mod_integer = Const(Fun{Tuple{FInteger,FInteger},FInteger}(%))
 
-const add_real = (f = Fun{Tuple{FReal,FReal},FReal}(+); Const(f))
-const sub_real = (f = Fun{Tuple{FReal,FReal},FReal}(-); Const(f))
-const mul_real = (f = Fun{Tuple{FReal,FReal},FReal}(*); Const(f))
-const div_real = (f = Fun{Tuple{FReal,FReal},FReal}(/); Const(f))
+const eq_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(feq))
+const ne_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(fne))
+const le_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(fle))
+const lt_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(flt))
+const ge_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(fge))
+const gt_integer = Const(Fun{Tuple{FInteger,FInteger},FLogical}(fgt))
+
+const pos_real = Const(Fun{Tuple{FReal},FReal}(+))
+const neg_real = Const(Fun{Tuple{FReal},FReal}(-))
+
+const add_real = Const(Fun{Tuple{FReal,FReal},FReal}(+))
+const sub_real = Const(Fun{Tuple{FReal,FReal},FReal}(-))
+const mul_real = Const(Fun{Tuple{FReal,FReal},FReal}(*))
+const div_real = Const(Fun{Tuple{FReal,FReal},FReal}(/))
+
+const eq_real = Const(Fun{Tuple{FReal,FReal},FLogical}(feq))
+const ne_real = Const(Fun{Tuple{FReal,FReal},FLogical}(fne))
+const le_real = Const(Fun{Tuple{FReal,FReal},FLogical}(fle))
+const lt_real = Const(Fun{Tuple{FReal,FReal},FLogical}(flt))
+const ge_real = Const(Fun{Tuple{FReal,FReal},FLogical}(fge))
+const gt_real = Const(Fun{Tuple{FReal,FReal},FLogical}(fgt))
 
 end

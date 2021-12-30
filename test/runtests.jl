@@ -49,6 +49,31 @@ end
     @test res ≡ FInteger(5 - 2 + 1)
 end
 
+@testset "Do-while loop" begin
+    fun = FFunction(:loop2, FInteger, [Var(:imin, FInteger), Var(:imax, FInteger)], [Var(:count, FInteger), Var(:i, FInteger)],
+                    Block([Assign(Var(:count, FInteger), Const(FInteger(0))), Assign(Var(:i, FInteger), Var(:imin, FInteger)),
+                           DoWhile(Call(Fortran.le_integer, FExpr[Var(:i, FInteger), Var(:imax, FInteger)]),
+                                   Block([Assign(Var(:count, FInteger),
+                                                 Call(Fortran.add_integer, FExpr[Var(:count, FInteger), Const(FInteger(1))])),
+                                          Assign(Var(:i, FInteger),
+                                                 Call(Fortran.add_integer, FExpr[Var(:i, FInteger), Const(FInteger(1))]))])),
+                           Assign(Var(:var"loop2.result", FInteger), Var(:count, Integer))]))
+    cfun = clean_code(feval(fun))
+    println("Compiled function:")
+    println(cfun)
+    eval(cfun)
+    println("code_warntype:")
+    @code_warntype loop2(FInteger(2), FInteger(5))
+    println("code_llvm:")
+    @code_llvm loop2(FInteger(2), FInteger(5))
+    println("code_native:")
+    @code_native loop2(FInteger(2), FInteger(5))
+    println("result:")
+    res = loop2(FInteger(2), FInteger(5))
+    println(res)
+    @test res ≡ FInteger(5 - 2 + 1)
+end
+
 @testset "If statment loop" begin
     fun = FFunction(:cond, FInteger, [Var(:c, FLogical), Var(:x, FInteger), Var(:y, FInteger)], Var[],
                     If([Var(:c, FLogical) => Assign(Var(:var"cond.result", FInteger), Var(:x, FInteger))],
